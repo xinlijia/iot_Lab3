@@ -73,8 +73,6 @@ class mtaUpdates(object):
                 if(exist==0):
                     trip.append(new)
 
-
-
 	    if entity.vehicle and entity.vehicle.trip.trip_id:
 	    	new = trip.trip()
                 exist=0
