@@ -9,5 +9,3 @@ Lab 4: Focused on basic data processing and using the Amazon SNS service.
 Lab 5: Collecting data over a period of a few days. Using that data, in addition to current data points to predict the realtime
 performance of a choice between the local (1) or express(2,3) trains at the 96th Station, when heading downtown towards 42nd Street,
 Times Square.
-
-Peng Guo
