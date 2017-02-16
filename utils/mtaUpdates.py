@@ -18,16 +18,16 @@ class mtaUpdates(object):
 
     # Do not change Timezone
     TIMEZONE = timezone('America/New_York')
-    
+
     # feed url depends on the routes to which you want updates
     # here we are using feed 1 , which has lines 1,2,3,4,5,6,S
     # While initializing we can read the API Key and add it to the url
     feedurl = 'http://datamine.mta.info/mta_esi.php?feed_id=1&key='
-    
-    VCS = {1:"INCOMING_AT", 2:"STOPPED_AT", 3:"IN_TRANSIT_TO"}    
-    #tripUpdates = []
+
+    VCS = {1:"INCOMING_AT", 2:"STOPPED_AT", 3:"IN_TRANSIT_TO"}
+    tripUpdates = []
     #alerts = []
-    trips=[]
+    #trips=[]
     vehicles=[]
 
     def __init__(self,apikey):
@@ -41,65 +41,101 @@ class mtaUpdates(object):
                 d = feed.ParseFromString(response.read())
         except (urllib2.URLError, google.protobuf.message.DecodeError) as e:
             print "Error while connecting to mta server " +str(e)
-	
 
-	timestamp = feed.header.timestamp
+    	timestamp = feed.header.timestamp
         nytime = datetime.fromtimestamp(timestamp,self.TIMEZONE)
-	
-	for entity in feed.entity:
+
+        # pg
+        for entity in feed.entity:
             if entity.trip_update and entity.trip_update.trip.trip_id:
-		new = trip.trip()
+                update = entity.trip_update
+                # Extract trip information.
+                # 'currentStopId', 'currentStopStatus', 'vehicleTimeStamp' would be updated by vehicle Message,
+                # I set 0 (default value) to them here. --pg
+                t = OrderedDict()
+                t['tripId'] = update.trip.trip_id
+                t['routeId'] = update.trip.route_id
+                t['startDate'] = update.trip.start_date
+                t['direction'] = update.trip.direction_id  ####### 'id' should be converted to 'N'/'S'  --pg
+                t['currentStopId'] = 0
+                t['currentStopStatus'] = 0
+                t['vehicleTimeStamp'] = 0
+                # Complicate data structure for 'futureStopData',
+                # Refer to assignment's requirement.  --pg
+                t['futureStopData'] = OrderedDict()
+                for future_stop in update.stop_time_update:
+                    stop_id = future_stop.stop_id
+                    t['futureStopData'][stop_id] = []
+                    t['futureStopData'][stop_id].append(OrderedDict([('arrivaltime',future_stop.arrival.time)]))
+                    t['futureStopData'][stop_id].append(OrderedDict([('departuretime',future_stop.departure.time)]))
+
+                t['timeStamp'] = timestamp
+                tripUpdates.append(t)
+
+            if entity.vehicle and entity.vehicle.trip.trip_id:
+                vehicle = entity.vehicle
+                v = OrderedDict()
+
+
+
+
+        # pg end
+        for entity in feed.entity:
+            if entity.trip_update and entity.trip_update.trip.trip_id:
+    		    new = trip.trip()
                 exist=0
                 for old in trips:
                     if old.tripId == entity.trip_update.trip.trip_id:
                         new = old
                         exist=1
                         break
-                #for updates in entity:
-                #naive approach, not consider repeatition
-                if(entity.trip_update.trip.start_date):
-                    new.startDate=entity.trip_update.trip.start_date
-                if(entity.trip_update.trip.route_id):
-                    new.routeId=entity.trip_update.trip.route_id
-                if(entity.trip_update.stop_time_update.stop_id):
-                    if(entity.trip_update.stop_time_update.arrival):
-                    #update arrival
-                        new.futureStopData[stop_id][0]=entity.trip_update.stop_time_update.arrival.time
-                    if(entity.trip_update.stop_time_update.departure):
-                    #update departure
-                        new.futureStopData[stop_id][1]=entity.trip_update.stop_time_update.departure.time
+                    #for updates in entity:
+                    #naive approach, not consider repeatition
+                    if(entity.trip_update.trip.start_date):
+                        new.startDate=entity.trip_update.trip.start_date
+                    if(entity.trip_update.trip.route_id):
+                        new.routeId=entity.trip_update.trip.route_id
+                    if(entity.trip_update.stop_time_update.stop_id):
+                        if(entity.trip_update.stop_time_update.arrival):
+                        #update arrival
+                            new.futureStopData[stop_id][0]=entity.trip_update.stop_time_update.arrival.time
+                        if(entity.trip_update.stop_time_update.departure):
+                        #update departure
+                            new.futureStopData[stop_id][1]=entity.trip_update.stop_time_update.departure.time
 
-                trip.timeStamp=entity.id
-                if(exist==0):
-                    trip.append(new)
+                    trip.timeStamp=entity.id
+                    if(exist==0):
+                        trip.append(new)
 
-	    if entity.vehicle and entity.vehicle.trip.trip_id:
-	    	new = trip.trip()
-                exist=0
-                for old in trips:
-                    if(old.tripId==entity.vehicle.trip.trip_id):
-                        new = old
-                        exist=1
-                        break
-                if(entity.vehicle.trip.start_date):
-                    new.startDate=entity.vehicle.trip.start_date
-                if(entity.vehicle.trip.route_id):
-                    new.routeId=entity.vehicle.trip.route_id
-                if(entity.vehicle.current_status):
-                    new.currentStopStatus=entity.vehicle.current_status
-                if(entity.vehicle.stop_id):
-                    new.currentStopId=entity.vehicle.stop_id
-                if(entity.vehicle.time_stamp):
-                    new.vehicleTimeStamp=entity.vehicle.time_stamp
 
-                trip.timeStamp=entity.id
-                if(exist==0):
-                    trip.append(new)
 
-	    if entity.alert:
+    	    if entity.vehicle and entity.vehicle.trip.trip_id:
+    	    	new = trip.trip()
+                    exist=0
+                    for old in trips:
+                        if(old.tripId==entity.vehicle.trip.trip_id):
+                            new = old
+                            exist=1
+                            break
+                    if(entity.vehicle.trip.start_date):
+                        new.startDate=entity.vehicle.trip.start_date
+                    if(entity.vehicle.trip.route_id):
+                        new.routeId=entity.vehicle.trip.route_id
+                    if(entity.vehicle.current_status):
+                        new.currentStopStatus=entity.vehicle.current_status
+                    if(entity.vehicle.stop_id):
+                        new.currentStopId=entity.vehicle.stop_id
+                    if(entity.vehicle.time_stamp):
+                        new.vehicleTimeStamp=entity.vehicle.time_stamp
+
+                    trip.timeStamp=entity.id
+                    if(exist==0):
+                        trip.append(new)
+
+    	    if entity.alert:
                 new = trip.trip()
-            # no need to update
+                # no need to update
 
-	return self.tripUpdates
-    
-    # END OF getTripUpdates method
+    	return self.tripUpdates
+
+        # END OF getTripUpdates method
