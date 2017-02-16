@@ -26,7 +26,8 @@ class mtaUpdates(object):
 
     VCS = {1:"INCOMING_AT", 2:"STOPPED_AT", 3:"IN_TRANSIT_TO"}
     tripUpdates = []
-    vehicles=[]
+    alerts = []
+    vehicles = []
 
     def __init__(self,apikey):
         self.feedurl = self.feedurl + apikey
@@ -43,6 +44,9 @@ class mtaUpdates(object):
     	timestamp = feed.header.timestamp
         nytime = datetime.fromtimestamp(timestamp,self.TIMEZONE)
 
+        # Initialize hash table storing subscript of each trip.  --pg
+        trip_idx = 0
+        trip_hash = dict()
         for entity in feed.entity:
             if entity.trip_update and entity.trip_update.trip.trip_id:
                 update = entity.trip_update
@@ -67,7 +71,10 @@ class mtaUpdates(object):
                     t['futureStopData'][stop_id].append(OrderedDict([('departureTime',future_stop.departure.time)]))
                 t['timeStamp'] = timestamp
                 # Add this trip to 'tripUpdates' list.  --pg
-                tripUpdates.append(t)
+                self.tripUpdates.append(t)
+                # Add subscript to hashtable.  --pg
+                trip_hash[update.trip.trip_id] = trip_idx
+                trip_idx += 1
 
             if entity.vehicle and entity.vehicle.trip.trip_id:
                 vehicle = entity.vehicle
@@ -86,11 +93,10 @@ class mtaUpdates(object):
                     v['currentStopStatus'] = 3
                 v['vehicleTimeStamp'] = vehicle.timestamp
                 # Add this vehicle update to 'vehicles' list. --pg
-                vehicles.append(v)
+                self.vehicles.append(v)
 
             if entity.alert:
-                # No need to gether info from alert Message.
-                pass
+                self.alerts.append(entity.alert)
 
         def vehicle_update_trip(t, v):
             '''
@@ -108,10 +114,16 @@ class mtaUpdates(object):
             return None
 
         # Update.  --pg
-        for v in vehicles:
-            for t in tripUpdates:
-                if t['tripId'] == v['tripId']:
-                    vehicle_update_trip(t, v)
+        for v in self.vehicles:
+            try:
+                idx = trip_hash[v['tripId']]
+                vehicle_update_trip(self.tripUpdates[idx], v)
+            except KeyError:
+                # The case where this 'vehicle' cannot find its corresponding 'trip_update'
+                #####################
+
+                #####################
+                pass
 
         return self.tripUpdates
 
