@@ -36,7 +36,7 @@ from boto.dynamodb2.fields import HashKey, RangeKey
 DYNAMODB_TABLE_NAME = 'add_clean_test'
 # ac = Table.create(DYNAMODB_TABLE_NAME, schema=[HashKey('ID'), RangeKey('Time')]);
 # Use Existing Table.
-ac = Table('ac')
+ac = Table(DYNAMODB_TABLE_NAME)
 
 ### Two functions: adding and cleaning
 def adding(table):
@@ -100,4 +100,4 @@ t2.start()
 
 # Wait for threads t1 & t2 to finish
 t1.join()
-t2.join() 
+t2.join()
