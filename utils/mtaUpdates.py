@@ -12,7 +12,7 @@ from pytz import timezone
 import gtfs_realtime_pb2
 import google.protobuf
 
-import vehicle,alert,tripupdate,trip
+# import vehicle,alert,tripupdate,trip
 
 class mtaUpdates(object):
 
@@ -86,11 +86,11 @@ class mtaUpdates(object):
                 v['currentStopId'] = vehicle.stop_id
                 # Set 'currentStopStatus' value. --pg
                 if vehicle.current_status == gtfs_realtime_pb2.VehiclePosition.INCOMING_AT:
-                    v['currentStopStatus'] = 1
+                    v['currentStopStatus'] = 'INCOMING_AT'
                 elif vehicle.current_status == gtfs_realtime_pb2.VehiclePosition.STOPPED_AT:
-                    v['currentStopStatus'] = 2
+                    v['currentStopStatus'] = 'STOPPED_AT'
                 else:
-                    v['currentStopStatus'] = 3
+                    v['currentStopStatus'] = "IN_TRANSIT_TO"
                 v['vehicleTimeStamp'] = vehicle.timestamp
                 # Add this vehicle update to 'vehicles' list. --pg
                 self.vehicles.append(v)

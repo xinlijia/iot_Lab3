@@ -6,11 +6,13 @@ import boto.dynamodb2
 from pytz import timezone
 import calendar
 import logging
-
+import sys
+sys.path.append('../utils')
+import mtaUpdates
 
 ### Connect to AWS & Set a new table in Dynamo
 # Change 'aws_connect.txt' below to your file.
-with open('./aws_connect.txt', 'rb') as aws_file:
+with open('/Users/pengguo/Desktop/iot_Lab3/aws_connect.txt', 'rb') as aws_file:
     content = aws_file.readlines()
     ACCOUNT_ID = content[0].rstrip('\n').split()[2]
     IDENTITY_POOL_ID = content[1].rstrip('\n').split()[2]
@@ -33,14 +35,14 @@ client_dynamo = boto.dynamodb2.connect_to_region(
     security_token=assumedRoleObject.credentials.session_token)
 
 # Create New Table or use existing table.
-# ID as hashkey; Time as RangeKey.
+# Trip ID as hashkey; Timestamp as RangeKey.
 from boto.dynamodb2.table import Table
 from boto.dynamodb2.fields import HashKey, RangeKey
-DYNAMODB_TABLE_NAME = 'add_clean_test'
+DYNAMODB_TABLE_NAME = 'Lab3'
 # Handle error condition: Creating a table that already exists.
 try:
     # Try creating a new table.
-    ac = Table.create(DYNAMODB_TABLE_NAME, schema=[HashKey('ID'), RangeKey('Time')])
+    ac = Table.create(DYNAMODB_TABLE_NAME, schema=[HashKey('Trip ID'), RangeKey('Timestamp')])
 except boto.exception.JSONResponseError:
     # Use existing table.
     ac = Table(DYNAMODB_TABLE_NAME)
@@ -52,24 +54,31 @@ logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-8s) %(message)s',
                     )
 
-def adding(table, run_event):
+def adding(table, run_event, tripUpdates):
     logging.debug('Starting.')
-    ctr = 0
     # every 2.5 seconds, add 5 tuples to table
     while(run_event.is_set()):
-        for i in range(5):
-            ctr += 1
-            # Get current time in POSIX format & datetime (human-readable) format.
-            d = datetime.utcnow()
-            cur_time = calendar.timegm(d.utctimetuple())
-            cur_time_readable = datetime.fromtimestamp(cur_time, timezone('America/New_York'))
+        # Get data from feed
+        update_list = tripUpdates.getTripUpdates()
+        for t in update_list:
+            # Get current time in datetime (human-readable) format.
+            cur_time_readable = datetime.fromtimestamp(t['timeStamp'], timezone('America/New_York'))
             # Write new data to Dynamo
             table.put_item(
                 data={
-                    'ID': str(ctr),
-                    'Time': str(cur_time),
-                    'Time(Readable)':str(cur_time_readable)})
-        time.sleep(2.5)
+                    'Trip ID': t['tripId'],
+                    'Route ID': t['routeId'],
+                    'Start Date': t['startDate'],
+                    'Direction': t['direction'],
+                    'Current Stop ID': t['currentStopId'],
+                    'Current Stop Status': t['currentStopStatus'],
+                    'Vehicle Timestamp': t['vehicleTimeStamp'],
+                    'Future Stop Data': t['futureStopData'],
+                    'Timestamp': str(t['timeStamp']),
+                    'Timestamp(Readable)': str(cur_time_readable)[0:19]},
+                    overwrite = True)
+
+        time.sleep(30)
 
     # run_event is cleared (run_event.is_set() == False), exit the thread
     logging.debug('Exiting.')
@@ -78,7 +87,6 @@ def adding(table, run_event):
 
 def cleaning(table, run_event):
     logging.debug('Starting.')
-    # every 5 seconds, delete all 10-second-old data
     while(run_event.is_set()):
         # Get current time.
         d = datetime.utcnow()
@@ -87,9 +95,9 @@ def cleaning(table, run_event):
         all_data = table.scan()
         # Find all old data and delete them.
         for data in all_data:
-            if cur_time - int(data['Time']) > 10:
+            if cur_time - int(data['Timestamp']) >= 120:
                 data.delete()
-
+        time.sleep(60)
     # run_event.is_set() == False, exiting the thread.
     logging.debug('Exiting.')
 
@@ -101,9 +109,14 @@ def cleaning(table, run_event):
 run_event = threading.Event()
 run_event.set()
 
+# create an mtaUpdates object.
+with open('/Users/pengguo/Desktop/iot_Lab3/utils/api_key.txt', 'rb') as keyfile:
+    key = keyfile.read().rstrip('n')
+tripUpdates = mtaUpdates.mtaUpdates(key)
+
 # Two Threads: adding and cleaning
-t1 = threading.Thread(target = adding, name = 'adding', args=(ac, run_event))    # ac: table in DynamoDB
-t2 = threading.Thread(target = cleaning, name = 'cleaning', args=(ac, run_event))
+t1 = threading.Thread(target = adding, name = 'Adding', args=(ac, run_event, tripUpdates))    # ac: table in DynamoDB
+t2 = threading.Thread(target = cleaning, name = 'Cleaning', args=(ac, run_event))
 
 # Set to Daemon mode
 t1.setDaemon(True)
@@ -114,8 +127,8 @@ t2.start()
 
 try:
     while True:
-        time.sleep(0.1)
-except keyboardInterrupt:
+        time.sleep(1)
+except KeyboardInterrupt:
     print "Keyboard Interrupt, attempting to close the threads."
     # Send exit signals.
     run_event.clear()
