@@ -45,7 +45,7 @@ try:
     ac = Table.create(DYNAMODB_TABLE_NAME, schema=[HashKey('Trip ID'), RangeKey('Timestamp')], connection = client_dynamo)
 except boto.exception.JSONResponseError:
     # Use existing table.
-    ac = Table(DYNAMODB_TABLE_NAME)
+    ac = Table(DYNAMODB_TABLE_NAME, connection = client_dynamo)
 
 
 ### Two functions: adding and cleaning
