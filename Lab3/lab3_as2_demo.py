@@ -69,7 +69,7 @@ def adding(table, run_event, tripUpdates):
                     'Trip ID': t['tripId'],
                     'Route ID': t['routeId'],
                     'Start Date': t['startDate'],
-                    'Direction': t['futureStopData'].keys()[0][-1],
+                    'Direction': t['tripId'].split('.')[-1][0],
                     'Current Stop ID': t['currentStopId'],
                     'Current Stop Status': t['currentStopStatus'],
                     'Vehicle Timestamp': t['vehicleTimeStamp'],
