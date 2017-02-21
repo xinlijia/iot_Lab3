@@ -42,7 +42,7 @@ DYNAMODB_TABLE_NAME = 'Lab3'
 # Handle error condition: Creating a table that already exists.
 try:
     # Try creating a new table.
-    ac = Table.create(DYNAMODB_TABLE_NAME, schema=[HashKey('Trip ID'), RangeKey('Timestamp')])
+    ac = Table.create(DYNAMODB_TABLE_NAME, schema=[HashKey('Trip ID'), RangeKey('Timestamp')], connection = client_dynamo)
 except boto.exception.JSONResponseError:
     # Use existing table.
     ac = Table(DYNAMODB_TABLE_NAME)
@@ -69,7 +69,7 @@ def adding(table, run_event, tripUpdates):
                     'Trip ID': t['tripId'],
                     'Route ID': t['routeId'],
                     'Start Date': t['startDate'],
-                    'Direction': t['direction'],
+                    'Direction': t['futureStopData'].keys()[0][-1],
                     'Current Stop ID': t['currentStopId'],
                     'Current Stop Status': t['currentStopStatus'],
                     'Vehicle Timestamp': t['vehicleTimeStamp'],
@@ -127,7 +127,7 @@ t2.start()
 
 try:
     while True:
-        time.sleep(1)
+        time.sleep(10)
 except KeyboardInterrupt:
     print "Keyboard Interrupt, attempting to close the threads."
     # Send exit signals.

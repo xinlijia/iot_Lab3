@@ -59,7 +59,7 @@ class mtaUpdates(object):
                 t['startDate'] = update.trip.start_date
                 t['direction'] = update.trip.direction_id  ####### Need to be converted to 'N'/'S'  --pg
                 t['currentStopId'] = ''
-                t['currentStopStatus'] = 0
+                t['currentStopStatus'] = 'UNKNOWN'
                 t['vehicleTimeStamp'] = 0
                 # Complicate data structure for 'futureStopData',
                 # Refer to assignment's requirement.  --pg
