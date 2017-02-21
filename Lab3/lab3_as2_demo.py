@@ -42,11 +42,12 @@ DYNAMODB_TABLE_NAME = 'Lab3'
 # Handle error condition: Creating a table that already exists.
 try:
     # Try creating a new table.
-    ac = Table.create(DYNAMODB_TABLE_NAME, schema=[HashKey('Trip ID'), RangeKey('Timestamp')], connection = client_dynamo)
+    ac = Table.create(DYNAMODB_TABLE_NAME, schema=[HashKey('Trip ID')], connection = client_dynamo)
 except boto.exception.JSONResponseError:
     # Use existing table.
     ac = Table(DYNAMODB_TABLE_NAME, connection = client_dynamo)
 
+time.sleep(5)
 
 ### Two functions: adding and cleaning
 # Configure logging: "(threadName) message" format
