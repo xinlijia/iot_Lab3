@@ -7,10 +7,10 @@ import boto.dynamodb2
 import boto3
 from boto3.dynamodb.conditions import Key,Attr
 
-sys.path.append('../utils')
+sys.path.append('./utils')
 import aws
 
-with open('aws_connect.txt', 'rb') as aws_file:
+with open('../aws_connect.txt', 'rb') as aws_file:
     content = aws_file.readlines()
     ACCOUNT_ID = content[0].rstrip('\n').split()[2]
     IDENTITY_POOL_ID = content[1].rstrip('\n').split()[2]
@@ -54,34 +54,38 @@ def planTrip():
     line1,line2,line3=[],[],[]
     line1_min,line2_min,line3_min=-1,-1,-1
     items=ac.scan()
+    for i in items:
+        print i['Future Stop Data']
     #find the nearest 1 train, rerun if there's an error
     for item in items:
-        if (item['Route ID']==1):
-            if("117" in item['Future Stop Data']):
-                if(item['Future Stop Data']["117"]["L"][0]["M"]['arrivalTime']["N"]=="0"):
-                    raise Exception('line 2 data error')
+        if (item['Route ID']=="1"):
+            if('117S' in item['Future Stop Data']):
+                if(item['Future Stop Data']["117S"][0]['arrivalTime']=="0"):
+                    raise Exception('line 1 data error')
                 else:
                     if(line1_min==-1):
                         line1_i=item
-                        line1_min=int(item['Future Stop Data']["117"]["L"][0]["M"]['arrivalTime']["N"])
-                    elif(line1_min>=int(item['Future Stop Data']["117"]["L"][0]["M"]['arrivalTime']["N"])):
+                        line1_min=int(item['Future Stop Data']["117S"][0]['arrivalTime'])
+                    elif(line1_min>=int(item['Future Stop Data']["117S"][0]['arrivalTime'])):
                         line1_i=item
-                        line1_min=int(item['Future Stop Data']["117"]["L"][0]["M"]['arrivalTime']["N"])
-
+                        line1_min=int(item['Future Stop Data']["117S"][0]['arrivalTime'])
+    if(line1_min==-1):
+        raise Exception('line 1 data error 1')
     #check if the selected train 1 has arrival time data for 96th and 42th
         if (line1_i['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"]=="0" or line1_i['Future Stop Data']["127"]["L"][0]["M"]['arrivalTime']["N"]=="0"):
-            raise Exception('line 2 data error')
+            raise Exception('line 1 data error 2')
         else:
             line1Arrival96Time=line1_i['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"]
 
     #find nearest 2,3 train, rerun if there's an error
     for item in items:
         #case line2
-        if(item['Route ID'==2]):
+        if(item['Route ID'=="2"]):
             if("120" in item['Future Stop Data'] and "127" in item['Future Stop Data']):
                 if(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"]=="0" or item['Future Stop Data']["127"]["L"][0]["M"]['arrivalTime']["N"]=="0"):
                     raise Exception('line 2 data error')
                 elif(int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])>line1Arrival96Time):
+                    #line2.append(item)
                     if(line2_min==-1):
                         line2_i=item
                         line2_min=int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])
@@ -89,11 +93,12 @@ def planTrip():
                         line2_i=item
                         line2_min=int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])
         #case line3
-        if(item['Route ID'==3]):
+        if(item['Route ID'=="3"]):
             if("120" in item['Future Stop Data'] and "127" in item['Future Stop Data']):
                 if(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"]=="0" or item['Future Stop Data']["127"]["L"][0]["M"]['arrivalTime']["N"]=="0"):
-                    raise Exception('line 2 data error')
+                    raise Exception('line 3 data error')
                 elif(int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])>line1Arrival96Time):
+                    #line3.append(item)
                     if(line3_min==-1):
                         line3_i=item
                         line3_min=int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])
