@@ -81,13 +81,13 @@ def planTrip():
             if("120" in item['Future Stop Data'] and "127" in item['Future Stop Data']):
                 if(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"]=="0" or item['Future Stop Data']["127"]["L"][0]["M"]['arrivalTime']["N"]=="0"):
                     raise Exception('line 2 data error')
-                    elif(int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])>line1Arrival96Time):
-                        if(line2_min==-1):
-                            line2_i=item
-                            line2_min=int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])
-                        elif(line2_min>=int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])):
-                            line2_i=item
-                            line2_min=int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])
+                elif(int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])>line1Arrival96Time):
+                    if(line2_min==-1):
+                        line2_i=item
+                        line2_min=int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])
+                    elif(line2_min>=int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])):
+                        line2_i=item
+                        line2_min=int(item['Future Stop Data']["120"]["L"][0]["M"]['arrivalTime']["N"])
         #case line3
         if(item['Route ID'==3]):
             if("120" in item['Future Stop Data'] and "127" in item['Future Stop Data']):
