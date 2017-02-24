@@ -3,14 +3,13 @@
 
 import json,time,csv,sys
 import boto
-import boto.dynamodb2
 import boto.sns
 import boto3
 from boto3.dynamodb.conditions import Key,Attr
 import urllib2,contextlib
 from datetime import datetime
 from pytz import timezone
-sys.path.append('../utils')  
+sys.path.append('../utils/')
 import gtfs_realtime_pb2, mtaUpdates
 import google.protobuf
 import aws
@@ -46,7 +45,6 @@ import aws
 # ac = Table(DYNAMODB_TABLE_NAME, connection = client_dynamo)
 # items = ac.scan()
 
-# prompt
 def source():
     s = raw_input("Please enter your source station : ")
     station = int(s)
@@ -64,7 +62,7 @@ def dest():
         s = input()
         station = int(s)
     return station
-    
+
 
 def readable_time(time):
     """
@@ -99,16 +97,15 @@ def main():
                 result = 'Stay'
             print result
 
-        
 
-#return bool type, true for switch
+
 def planTripS(source, destination):
     """
     Return: bool type, 'True'-- Switch train
     """
     # Fetch data directly from MTA feed.
-    with open('api_key.txt', 'rb') as keyfile:
-        key = keyfile.read().rstrip('n')
+    with open('../utils/api_key.txt', 'rb') as keyfile:
+        key = keyfile.read().rstrip('\n')
     tripUpdates = mtaUpdates.mtaUpdates(key)
     items = tripUpdates.getTripUpdates()
 
@@ -167,12 +164,12 @@ def planTripS(source, destination):
                     elif(line3_min>=int(item['futureStopData']["120S"][0]['arrivalTime'])):
                         line3_i=item
                         line3_min=int(item['futureStopData']["120S"][0]['arrivalTime'])
-    
+
     #Compared the arrival time on 42th of three lines
     line1Arrival42Time=line1_i['futureStopData']["127S"][0]['arrivalTime']
     line2Arrival42Time=line2_i['futureStopData']["127S"][0]['arrivalTime']
     line3Arrival42Time=line3_i['futureStopData']["127S"][0]['arrivalTime']
-        
+
     # check if the selected train 1 has arrival time for destination
     if (line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
         raise Exception('line 1 data error 3')
@@ -195,8 +192,8 @@ def planTripS(source, destination):
                                 if (item['futureStopData']["127S"][0]['arrivalTime']>line2Arrival42Time):
                                     line1.append(item)
                                     if(line1_min==-1):
-                                        line1_i=item 
-                                        line1_min=item['futureStopData']["127S"][0]['arrivalTime']                                     
+                                        line1_i=item
+                                        line1_min=item['futureStopData']["127S"][0]['arrivalTime']
                                     elif(line1_min>=item['futureStopData']["127S"][0]['arrivalTime']):
                                         line1_i=item
                                         line1_min=item['futureStopData']["127S"][0]['arrivalTime']
@@ -229,18 +226,18 @@ def planTripS(source, destination):
             line1time = line1ArrivalTime - currentTime1
             print "If you switch, you will arrive at : ", readable_time(line1ArrivalTime), ", take ", line1time, "seconds"
         return True
-    else:      
+    else:
         return False
 
-    
+
 #return bool type, true for switch
 def planTripN(source, destination):
     """
     Return: bool type, 'True'-- Switch train
     """
     # Fetch data directly from MTA feed.
-    with open('api_key.txt', 'rb') as keyfile:
-        key = keyfile.read().rstrip('n')
+    with open('../utils/api_key.txt'', 'rb') as keyfile:
+        key = keyfile.read().rstrip('\n')
     tripUpdates = mtaUpdates.mtaUpdates(key)
     items = tripUpdates.getTripUpdates()
 
@@ -299,12 +296,12 @@ def planTripN(source, destination):
                     elif(line3_min>=int(item['futureStopData']["127N"][0]['arrivalTime'])):
                         line3_i=item
                         line3_min=int(item['futureStopData']["127N"][0]['arrivalTime'])
-    
+
     #Compared the arrival time to 96th of three lines
     line1Arrival96Time=line1_i['futureStopData']["120N"][0]['arrivalTime']
     line2Arrival96Time=line2_i['futureStopData']["120N"][0]['arrivalTime']
     line3Arrival96Time=line3_i['futureStopData']["120N"][0]['arrivalTime']
-        
+
     # check if the selected train 1 has arrival time for destination
     if (line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
         raise Exception('line 1 data error 3')
@@ -327,8 +324,8 @@ def planTripN(source, destination):
                                 if (item['futureStopData']["120N"][0]['arrivalTime']>line2Arrival96Time):
                                     line1.append(item)
                                     if(line1_min==-1):
-                                        line1_i=item 
-                                        line1_min=item['futureStopData']["120N"][0]['arrivalTime']                                     
+                                        line1_i=item
+                                        line1_min=item['futureStopData']["120N"][0]['arrivalTime']
                                     elif(line1_min>=item['futureStopData']["120N"][0]['arrivalTime']):
                                         line1_i=item
                                         line1_min=item['futureStopData']["120N"][0]['arrivalTime']
@@ -361,10 +358,10 @@ def planTripN(source, destination):
             line1time = line1ArrivalTime - currentTime1
             print "If you switch, you will arrive at : ", readable_time(line1ArrivalTime), ", take ", line1time, "seconds"
         return True
-    else:      
-        return False 
+    else:
+        return False
 
-    
+
 
 if __name__ == "__main__":
     main()
