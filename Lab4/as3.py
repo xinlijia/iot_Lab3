@@ -45,8 +45,26 @@ import aws
 # ac = Table(DYNAMODB_TABLE_NAME, connection = client_dynamo)
 # items = ac.scan()
 
+# 96th street: 120, 120N, 120S
+# 42nd street: 127, 127N, 127S
+
+def staid_to_num(s):
+    """
+    Parse the Station ID to number.
+    '120', '120N', '120S' --> 120
+    input: station ID, str type
+    return: The number part of station ID, int type
+    """
+    if s[-1].isalpha():
+        return int(s[:-1])
+    else:
+        return int(s)
+
+
 def source():
     s = raw_input("Please enter your source station : ")
+    # Should parse the input string here.
+    # For example: '120N' is an invalid input here.
     station = int(s)
     while (120 < station < 127):
         print "please enter a station North of the 96th street or South of 42nd street : "
@@ -76,11 +94,15 @@ def main():
     while(1):
         c=source()
         d=dest()
+
         while ((c<120 and d<120) or (c>127 and d>127)):
-            print "Please re-enter your source station and destination"
-            c = source()
-            d = dest()
-        if (c<d):
+            print "No Line 2 or Line 3 available along your route. No need to switch."
+            continue
+
+        if (c == d):
+            print "Source and destination are the same. Try again."
+            continue
+        elif (c<d):
             s = ''.join([str(c),'S'])
             d = ''.join([str(d),'S'])
             if (planTripS(s,d)== True):
@@ -101,7 +123,12 @@ def main():
 
 def planTripS(source, destination):
     """
-    Return: bool type, 'True'-- Switch train
+    Heading south. Decide whether to switch in 96th street(ID: 120/N/S).
+    Algorithm:
+        1. Identify earliest possible Line 1.
+        2. Identify the earliest possible Line 2 or Line 3 after user reaches 96th street.
+        3. Compare three trains' arrival time to 42th street(ID: 127/N/S)
+    Return: bool type. 'True'-- Switch train
     """
     # Fetch data directly from MTA feed.
     with open('../utils/api_key.txt', 'rb') as keyfile:
@@ -129,10 +156,10 @@ def planTripS(source, destination):
     if(line1_min==-1):
         raise Exception('line 1 data error 1')
     #check if the selected train 1 has arrival time data for 96th and 42nd
-        if (line1_i['futureStopData']["120S"][0]['arrivalTime']=="0" or line1_i['futureStopData']["127S"][0]['arrivalTime']=="0" or line1_i['futureStopData'][source][0]['arrivalTime']=="0" or line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
-            raise Exception('line 1 data error 2')
-        else:
-            line1Arrival96Time=int(line1_i['futureStopData']["120S"][0]['arrivalTime'])
+    if (line1_i['futureStopData']["120S"][0]['arrivalTime']=="0" or line1_i['futureStopData']["127S"][0]['arrivalTime']=="0" or line1_i['futureStopData'][source][0]['arrivalTime']=="0" or line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
+        raise Exception('line 1 data error 2')
+    else:
+        line1Arrival96Time=int(line1_i['futureStopData']["120S"][0]['arrivalTime'])
 
     #find nearest 2,3 train, return if there's an error
     for item in items:
@@ -169,6 +196,11 @@ def planTripS(source, destination):
     line1Arrival42Time=line1_i['futureStopData']["127S"][0]['arrivalTime']
     line2Arrival42Time=line2_i['futureStopData']["127S"][0]['arrivalTime']
     line3Arrival42Time=line3_i['futureStopData']["127S"][0]['arrivalTime']
+
+    # For 3 trains, print arrival time in 42nd St.
+    print "Earliest possible Line 1 would arrive 42nd Street at %s." %(readable_time(line1Arrival42Time))
+    print "Earliest possible Line 2 would arrive 42nd Street at %s." %(readable_time(line2Arrival42Time))
+    print "Earliest possible Line 3 would arrive 42nd Street at %s." %(readable_time(line3Arrival42Time))
 
     # check if the selected train 1 has arrival time for destination
     if (line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
@@ -236,7 +268,7 @@ def planTripN(source, destination):
     Return: bool type, 'True'-- Switch train
     """
     # Fetch data directly from MTA feed.
-    with open('../utils/api_key.txt'', 'rb') as keyfile:
+    with open('../utils/api_key.txt', 'rb') as keyfile:
         key = keyfile.read().rstrip('\n')
     tripUpdates = mtaUpdates.mtaUpdates(key)
     items = tripUpdates.getTripUpdates()
@@ -261,10 +293,10 @@ def planTripN(source, destination):
     if(line1_min==-1):
         raise Exception('line 1 data error 1')
     #check if the selected train 1 has arrival time data for 96th and 42nd
-        if (line1_i['futureStopData']["120N"][0]['arrivalTime']=="0" or line1_i['futureStopData']["127N"][0]['arrivalTime']=="0" or line1_i['futureStopData'][source][0]['arrivalTime']=="0" or line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
-            raise Exception('line 1 data error 2')
-        else:
-            line1Arrival42Time=int(line1_i['futureStopData']["127N"][0]['arrivalTime'])
+    if (line1_i['futureStopData']["120N"][0]['arrivalTime']=="0" or line1_i['futureStopData']["127N"][0]['arrivalTime']=="0" or line1_i['futureStopData'][source][0]['arrivalTime']=="0" or line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
+        raise Exception('line 1 data error 2')
+    else:
+        line1Arrival42Time=int(line1_i['futureStopData']["127N"][0]['arrivalTime'])
 
     #find nearest 2,3 train, return if there's an error
     for item in items:
@@ -301,6 +333,10 @@ def planTripN(source, destination):
     line1Arrival96Time=line1_i['futureStopData']["120N"][0]['arrivalTime']
     line2Arrival96Time=line2_i['futureStopData']["120N"][0]['arrivalTime']
     line3Arrival96Time=line3_i['futureStopData']["120N"][0]['arrivalTime']
+
+    print "Earliest possible Line 1 would arrive 96th Street at %s" %(readable_time(line1Arrival96Time))
+    print "Earliest possible Line 2 would arrive 96th Street at %s" %(readable_time(line2Arrival96Time))
+    print "Earliest possible Line 3 would arrive 96th Street at %s" %(readable_time(line3Arrival96Time))
 
     # check if the selected train 1 has arrival time for destination
     if (line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
