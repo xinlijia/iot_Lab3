@@ -107,63 +107,15 @@ def readable_time(time):
 def main():
     result = ''
     while(1):
-<<<<<<< HEAD
         mode = input('Please select mode: [1/2/3]')
         if(mode == 3):
             print "Exit."
-=======
-        mode=input("please enter your mode:[1/2/3]")
-        if(mode==3):
->>>>>>> origin/master
             return 0
         elif(mode!=1 and mode !=2):
             print "Wrong mode."
         else:
             c=source()
             d=dest()
-<<<<<<< HEAD
-
-            if (c<120 and d<120) or (c>127 and d>127):
-                print "No Line 2 or Line 3 available along your route. No need to switch."
-                continue
-            else:
-                if (c == d):
-                    print "Source and destination are the same. Try again."
-                    continue
-                elif (c<d):
-                    s = ''.join([str(c),'S'])
-                    d = ''.join([str(d),'S'])
-                    r = planTripS(s,d)
-                    if (r == -1):
-                        continue
-                    if (r == 1):
-                        result = 'Switch'
-                    if (r == 0):
-                        result = 'Stay'
-                    print result
-                else:
-                    s = ''.join([str(c),'N'])
-                    d = ''.join([str(d),'N'])
-                    r = planTripN(s,d)
-                    if (r == -1):
-                        continue
-                    if (r == 1):
-                        result = 'Switch'
-                    if (r == 0):
-                        result = 'Stay'
-                    print result
-                if (mode == 2):
-                    sendSubMes(result)
-
-def sendSubMes(result):
-
-    conn = boto.sns.connect_to_region("us-east-1",
-                aws_access_key_id = '',
-                aws_secret_access_key = '')
-    TOPIC = 'arn:aws:sns:us-east-1:936464516303:Demo_Topic'
-    add_sub = raw_input("Please input your phone number : ")
-    conn.subscribe(TOPIC,"SMS",add_sub)
-=======
 
             if ((c<120 and d<120) or (c>127 and d>127)):
                 print "No Line 2 or Line 3 available along your route. No need to switch."
