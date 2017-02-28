@@ -92,6 +92,7 @@ def readable_time(time):
 def main():
     result = ''
     while(1):
+        mode=input("please enter your mode:[1/2/3]")
         c=source()
         d=dest()
 
@@ -118,7 +119,26 @@ def main():
             else:
                 result = 'Stay'
             print result
+        if(mode=="2"):
+            sendSubMes(result)
+        if(mode=="3"):
+            return 0
+            
+# send subscribe message to the given phone number
+def sendSubMes(result):
 
+    conn = boto.sns.connect_to_region("us-east-1",
+                aws_access_key_id = '',
+                aws_secret_access_key = '')
+
+     
+    TOPIC = 'arn:aws:sns:us-east-1:936464516303:Demo_Topic'
+
+    add_sub = raw_input("Please input your phone number : ")
+
+    conn.subscribe(TOPIC,"SMS",add_sub)
+
+    pub = conn.publish(topic=TOPIC,message=result)
 
 
 def planTripS(source, destination):
