@@ -48,6 +48,9 @@ import aws
 # 96th street: 120, 120N, 120S
 # 42nd street: 127, 127N, 127S
 
+Line1_sta_id = [str(s) for s in range(103, 140)]
+Line1_sta_id.append('101')
+
 def staid_to_num(s):
     """
     Parse the Station ID to number.
@@ -60,27 +63,39 @@ def staid_to_num(s):
     else:
         return int(s)
 
+def invaild_feed_data():
+    print "Invalid feed data. Try it again."
+    return -1
 
 def source():
-    s = raw_input("Please enter your source station : ")
-    # Should parse the input string here.
-    # For example: '120N' is an invalid input here.
-    station = int(s)
-    while (120 < station < 127):
-        print "please enter a station North of the 96th street or South of 42nd street : "
-        s = input()
-        station = int(s)
+    while 1:
+        s = raw_input("Please enter your source station : ")
+        if s not in Line1_sta_id:
+            print "Invalid source station ID. Try again."
+            continue
+        else:
+            if (120 < int(s) < 127):
+                print "please enter a station North of the 96th street or South of 42nd street."
+                continue
+            else:
+                station = int(s)
+                break
     return station
 
 def dest():
-    s = raw_input("Please enter your destination : ")
-    station = int(s)
-    while (120 < station < 127):
-        print "please enter a station North of the 96th street or South of 42nd street : "
-        s = input()
-        station = int(s)
+    while 1:
+        s = raw_input("Please enter your source station : ")
+        if s not in Line1_sta_id:
+            print "Invalid source station ID. Try again."
+            continue
+        else:
+            if (120 < int(s) < 127):
+                print "please enter a station North of the 96th street or South of 42nd street."
+                continue
+            else:
+                station = int(s)
+                break
     return station
-
 
 def readable_time(time):
     """
@@ -92,14 +107,63 @@ def readable_time(time):
 def main():
     result = ''
     while(1):
+<<<<<<< HEAD
+        mode = input('Please select mode: [1/2/3]')
+        if(mode == 3):
+            print "Exit."
+=======
         mode=input("please enter your mode:[1/2/3]")
         if(mode==3):
+>>>>>>> origin/master
             return 0
         elif(mode!=1 and mode !=2):
             print "Wrong mode."
         else:
             c=source()
             d=dest()
+<<<<<<< HEAD
+
+            if (c<120 and d<120) or (c>127 and d>127):
+                print "No Line 2 or Line 3 available along your route. No need to switch."
+                continue
+            else:
+                if (c == d):
+                    print "Source and destination are the same. Try again."
+                    continue
+                elif (c<d):
+                    s = ''.join([str(c),'S'])
+                    d = ''.join([str(d),'S'])
+                    r = planTripS(s,d)
+                    if (r == -1):
+                        continue
+                    if (r == 1):
+                        result = 'Switch'
+                    if (r == 0):
+                        result = 'Stay'
+                    print result
+                else:
+                    s = ''.join([str(c),'N'])
+                    d = ''.join([str(d),'N'])
+                    r = planTripN(s,d)
+                    if (r == -1):
+                        continue
+                    if (r == 1):
+                        result = 'Switch'
+                    if (r == 0):
+                        result = 'Stay'
+                    print result
+                if (mode == 2):
+                    sendSubMes(result)
+
+def sendSubMes(result):
+
+    conn = boto.sns.connect_to_region("us-east-1",
+                aws_access_key_id = '',
+                aws_secret_access_key = '')
+    TOPIC = 'arn:aws:sns:us-east-1:936464516303:Demo_Topic'
+    add_sub = raw_input("Please input your phone number : ")
+    conn.subscribe(TOPIC,"SMS",add_sub)
+=======
 
             if ((c<120 and d<120) or (c>127 and d>127)):
                 print "No Line 2 or Line 3 available along your route. No need to switch."
@@ -127,7 +191,7 @@ def main():
             if(mode==2):
                 sendSubMes(result)
 
-            
+
 # send subscribe message to the given phone number
 def sendSubMes(result):
 
@@ -135,13 +199,14 @@ def sendSubMes(result):
                 aws_access_key_id = '',
                 aws_secret_access_key = '')
 
-     
+
     TOPIC = 'arn:aws:sns:us-east-1:936464516303:Demo_Topic'
 
     add_sub = raw_input("Please input your phone number : ")
 
     conn.subscribe(TOPIC,"SMS",add_sub)
 
+>>>>>>> origin/master
     pub = conn.publish(topic=TOPIC,message=result)
 
 
@@ -152,7 +217,11 @@ def planTripS(source, destination):
         1. Identify earliest possible Line 1.
         2. Identify the earliest possible Line 2 or Line 3 after user reaches 96th street.
         3. Compare three trains' arrival time to 42th street(ID: 127/N/S)
-    Return: bool type. 'True'-- Switch train
+    Return:
+        1: Switch
+        0: Stay
+        -1: Invalid feed data.
+
     """
     # Fetch data directly from MTA feed.
     with open('../utils/api_key.txt', 'rb') as keyfile:
@@ -169,21 +238,30 @@ def planTripS(source, destination):
             if( source in item['futureStopData'].keys()):
                 if('arrivalTime' in item['futureStopData'][source][0]):
                     if(item['futureStopData'][source][0]['arrivalTime']!=0):
-                        line1.append(item)
+                        line1.append(item)  # all available Line 1 trains
                         if(line1_min==-1):
-                            line1_i=item
-                            line1_min=item['futureStopData'][source][0]['arrivalTime']
+                            line1_i=item  # line1_i: nearest incoming line 1 train
+                            line1_min=item['futureStopData'][source][0]['arrivalTime']  # line1_min:
                         elif(line1_min>=item['futureStopData'][source][0]['arrivalTime']):
                             line1_i=item
                             line1_min=item['futureStopData'][source][0]['arrivalTime']
 
     if(line1_min==-1):
-        raise Exception('line 1 data error 1')
+        #raise Exception('line 1 data error 1')
+        return invaild_feed_data()
+    else:
+        print "Nearest Line 1 train coming at %s." %(readable_time(line1_min))
+
+
     #check if the selected train 1 has arrival time data for 96th and 42nd
     if (line1_i['futureStopData']["120S"][0]['arrivalTime']=="0" or line1_i['futureStopData']["127S"][0]['arrivalTime']=="0" or line1_i['futureStopData'][source][0]['arrivalTime']=="0" or line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
-        raise Exception('line 1 data error 2')
+        return invaild_feed_data()
+        #raise Exception('line 1 data error 2')
+
     else:
         line1Arrival96Time=int(line1_i['futureStopData']["120S"][0]['arrivalTime'])
+        print '\n'
+        print "This Line 1 train would arrive at 96th Street at %s." %(readable_time(line1Arrival96Time))
 
     #find nearest 2,3 train, return if there's an error
     for item in items:
@@ -192,7 +270,8 @@ def planTripS(source, destination):
             #check if train 2 has arrival time data for 96th and 42nd
             if("120S" in item['futureStopData'].keys() and "127S" in item['futureStopData'].keys()):
                 if(item['futureStopData']["120S"][0]['arrivalTime']=="0" or item['futureStopData']["127S"][0]['arrivalTime']=="0"):
-                    raise Exception('line 2 data error')
+                    return invaild_feed_data()
+
                 elif(int(item['futureStopData']["120S"][0]['arrivalTime'])>line1Arrival96Time):
                     #line2.append(item)
                     if(line2_min==-1):
@@ -206,7 +285,8 @@ def planTripS(source, destination):
             #check if train 3 has arrival time data for 96th and 42nd
             if("120S" in item['futureStopData'].keys() and "127S" in item['futureStopData'].keys()):
                 if(item['futureStopData']["120S"][0]['arrivalTime']=="0" or item['futureStopData']["127S"][0]['arrivalTime']=="0"):
-                    raise Exception('line 3 data error')
+                    #raise Exception('line 3 data error')
+                    return invaild_feed_data()
                 elif(int(item['futureStopData']["120S"][0]['arrivalTime'])>line1Arrival96Time):
                     #line3.append(item)
                     if(line3_min==-1):
@@ -216,29 +296,37 @@ def planTripS(source, destination):
                         line3_i=item
                         line3_min=int(item['futureStopData']["120S"][0]['arrivalTime'])
 
+    print "If you switch to Line 2, earliest possible Line 2 train would arrive 96th Street at %s." %(readable_time(line2_min))
+    print "If you switch to Line 3, earliest possible Line 3 train would arrive 96th Street at %s." %(readable_time(line3_min))
+
     #Compared the arrival time on 42th of three lines
     line1Arrival42Time=line1_i['futureStopData']["127S"][0]['arrivalTime']
     line2Arrival42Time=line2_i['futureStopData']["127S"][0]['arrivalTime']
     line3Arrival42Time=line3_i['futureStopData']["127S"][0]['arrivalTime']
 
     # For 3 trains, print arrival time in 42nd St.
-    print "Earliest possible Line 1 would arrive 42nd Street at %s." %(readable_time(line1Arrival42Time))
-    print "Earliest possible Line 2 would arrive 42nd Street at %s." %(readable_time(line2Arrival42Time))
-    print "Earliest possible Line 3 would arrive 42nd Street at %s." %(readable_time(line3Arrival42Time))
+    print '\n'
+    print "If you stay on Line 1, earliest possible Line 1 would arrive 42nd Street at %s." %(readable_time(line1Arrival42Time))
+    print "If you switch to Line 2, earliest possible Line 2 would arrive 42nd Street at %s." %(readable_time(line2Arrival42Time))
+    print "If you switch to Line 3, earliest possible Line 3 would arrive 42nd Street at %s." %(readable_time(line3Arrival42Time))
 
     # check if the selected train 1 has arrival time for destination
     if (line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
-        raise Exception('line 1 data error 3')
+        #raise Exception('line 1 data error 3')
+        return invaild_feed_data()
     line1ArrivalTime=line1_i['futureStopData'][destination][0]['arrivalTime']
     currentTime1 = line1_i['timeStamp']
     line1time = line1ArrivalTime - currentTime1
-    print "If you stay, you will arrive at : ", readable_time(line1ArrivalTime), ", take ", line1time, "seconds"
+    print "If you stay on Line 1, you will arrive at : ", readable_time(line1ArrivalTime), ", take ", line1time, "seconds."
 
     if(line1Arrival42Time>line2Arrival42Time or line1Arrival42Time>line3Arrival42Time):
+
         # If switch, when arrive at 42th, transfer to the nearest line 1
         line1_min=-1
-        #If take train2
+
         if (line2Arrival42Time<line3Arrival42Time):
+            print "Switch to Line 2."
+        #If take train2
             for item in items:
                 if (item['routeId']=="1"):
                     if( "127S" in item['futureStopData'].keys() and destination in item['futureStopData'].keys()):
@@ -253,8 +341,10 @@ def planTripS(source, destination):
                                     elif(line1_min>=item['futureStopData']["127S"][0]['arrivalTime']):
                                         line1_i=item
                                         line1_min=item['futureStopData']["127S"][0]['arrivalTime']
+            print "Earliest possible Line 1 train would arrive at %s." %(readable_time(line1_min))
 
         else:
+            print "Switch to Line 3."
             for item in items:
                 if (item['routeId']=="1"):
                     if( "127S" in item['futureStopData'].keys() and destination in item['futureStopData'].keys()):
@@ -268,22 +358,29 @@ def planTripS(source, destination):
                                         line1_i=item
                                         line1_min=item['futureStopData']["127S"][0]['arrivalTime']
                                         print "take line3", line1_min
+            print "Earliest possible Line 1 train would arrive at %s." %(readable_time(line1_min))
 
         if(line1_min==-1):
-            raise Exception('line 1 data error 1')
+            #raise Exception('line 1 data error 1')
+            return invaild_feed_data()
         #check if the selected train 1 has arrival time data for 42th anddestination
-            if (line1_i['futureStopData']["127S"][0]['arrivalTime']=="0" or line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
-                raise Exception('line 1 data error 2')
+        if (line1_i['futureStopData']["127S"][0]['arrivalTime']=="0" or line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
+            #raise Exception('line 1 data error 2')
+            return invaild_feed_data()
         else:
             if (line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
-                raise Exception('line 1 data error 3')
+                #raise Exception('line 1 data error 3')
+                return invaild_feed_data()
             line1ArrivalTime = int(line1_i['futureStopData'][destination][0]['arrivalTime'])
             currentTime1 = line1_i['timeStamp']
             line1time = line1ArrivalTime - currentTime1
-            print "If you switch, you will arrive at : ", readable_time(line1ArrivalTime), ", take ", line1time, "seconds"
-        return True
+            #print "If you switch, you will arrive at : ", readable_time(line1ArrivalTime), ", take ", line1time, "seconds"
+            print "This Line 1 train would arrive destination at %s." %(readable_time(line1ArrivalTime))
+
+        return 1
     else:
-        return False
+        print "Stay on Line 1. Would arrive destination at %s." %(readable_time(line1ArrivalTime))
+        return 0
 
 
 #return bool type, true for switch
@@ -314,13 +411,17 @@ def planTripN(source, destination):
                             line1_i=item
                             line1_min=item['futureStopData'][source][0]['arrivalTime']
 
+    print "Earliest possible Line 1 train would arrive at %s." %(readable_time(line1_min))
     if(line1_min==-1):
-        raise Exception('line 1 data error 1')
+        #raise Exception('line 1 data error 1')
+        return invaild_feed_data()
     #check if the selected train 1 has arrival time data for 96th and 42nd
     if (line1_i['futureStopData']["120N"][0]['arrivalTime']=="0" or line1_i['futureStopData']["127N"][0]['arrivalTime']=="0" or line1_i['futureStopData'][source][0]['arrivalTime']=="0" or line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
-        raise Exception('line 1 data error 2')
+        #raise Exception('line 1 data error 2')
+        return invaild_feed_data()
     else:
         line1Arrival42Time=int(line1_i['futureStopData']["127N"][0]['arrivalTime'])
+        print "This Line 1 train would arrive at 42nd Street at %s." %(readable_time(line1Arrival42Time))
 
     #find nearest 2,3 train, return if there's an error
     for item in items:
@@ -329,7 +430,8 @@ def planTripN(source, destination):
             #check if train 2 has arrival time data for 96th and 42nd
             if("120N" in item['futureStopData'].keys() and "127N" in item['futureStopData'].keys()):
                 if(item['futureStopData']["120N"][0]['arrivalTime']=="0" or item['futureStopData']["127N"][0]['arrivalTime']=="0"):
-                    raise Exception('line 2 data error')
+                    #raise Exception('line 2 data error')
+                    return invaild_feed_data()
                 elif(int(item['futureStopData']["127N"][0]['arrivalTime'])>line1Arrival42Time):
                     #line2.append(item)
                     if(line2_min==-1):
@@ -343,7 +445,8 @@ def planTripN(source, destination):
             #check if train 3 has arrival time data for 96th and 42nd
             if("120N" in item['futureStopData'].keys() and "127N" in item['futureStopData'].keys()):
                 if(item['futureStopData']["120N"][0]['arrivalTime']=="0" or item['futureStopData']["127N"][0]['arrivalTime']=="0"):
-                    raise Exception('line 3 data error')
+                    #raise Exception('line 3 data error')
+                    return invaild_feed_data()
                 elif(int(item['futureStopData']["127N"][0]['arrivalTime'])>line1Arrival42Time):
                     #line3.append(item)
                     if(line3_min==-1):
@@ -353,18 +456,22 @@ def planTripN(source, destination):
                         line3_i=item
                         line3_min=int(item['futureStopData']["127N"][0]['arrivalTime'])
 
+    print "If you switch to Line 2, earliest possible Line 2 train would arrive at %s." %(readable_time(line2_min))
+    print "If you switch to Line 3, earliest possible Line 3 train would arrive at %s." %(readable_time(line3_min))
+
     #Compared the arrival time to 96th of three lines
     line1Arrival96Time=line1_i['futureStopData']["120N"][0]['arrivalTime']
     line2Arrival96Time=line2_i['futureStopData']["120N"][0]['arrivalTime']
     line3Arrival96Time=line3_i['futureStopData']["120N"][0]['arrivalTime']
 
-    print "Earliest possible Line 1 would arrive 96th Street at %s" %(readable_time(line1Arrival96Time))
-    print "Earliest possible Line 2 would arrive 96th Street at %s" %(readable_time(line2Arrival96Time))
-    print "Earliest possible Line 3 would arrive 96th Street at %s" %(readable_time(line3Arrival96Time))
+    print "If you stay on Line 1, earliest possible Line 1 would arrive 96th Street at %s" %(readable_time(line1Arrival96Time))
+    print "If you switch to Line 2, earliest possible Line 2 would arrive 96th Street at %s" %(readable_time(line2Arrival96Time))
+    print "If you switch to Line 3, earliest possible Line 3 would arrive 96th Street at %s" %(readable_time(line3Arrival96Time))
 
     # check if the selected train 1 has arrival time for destination
     if (line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
-        raise Exception('line 1 data error 3')
+        #raise Exception('line 1 data error 3')
+        return invaild_feed_data()
     line1ArrivalTime=line1_i['futureStopData'][destination][0]['arrivalTime']
     currentTime1 = line1_i['timeStamp']
     line1time = line1ArrivalTime - currentTime1
@@ -375,6 +482,7 @@ def planTripN(source, destination):
         line1_min=-1
         #If take train2
         if (line2Arrival96Time<line3Arrival96Time):
+            print "Switch to Line 2."
             for item in items:
                 if (item['routeId']=="1"):
                     if( "120N" in item['futureStopData'].keys() and destination in item['futureStopData'].keys()):
@@ -389,8 +497,10 @@ def planTripN(source, destination):
                                     elif(line1_min>=item['futureStopData']["120N"][0]['arrivalTime']):
                                         line1_i=item
                                         line1_min=item['futureStopData']["120N"][0]['arrivalTime']
+            print "Earliest possible Line 1 train would arrive at 96th Street at %s." %(readable_time(line1_min))
 
         else:
+            print "Switch to Line 3."
             for item in items:
                 if (item['routeId']=="1"):
                     if( "120N" in item['futureStopData'].keys() and destination in item['futureStopData'].keys()):
@@ -404,22 +514,29 @@ def planTripN(source, destination):
                                         line1_i=item
                                         line1_min=item['futureStopData']["12ON"][0]['arrivalTime']
                                         print "take line3", line1_min
+            print "Earliest possible Line 1 train would arrive at 96th Street at %s." %(readable_time(line1_min))
 
         if(line1_min==-1):
-            raise Exception('line 1 data error 1')
+            #raise Exception('line 1 data error 1')
+            return invaild_feed_data()
         #check if the selected train 1 has arrival time data for 42th anddestination
-            if (line1_i['futureStopData']["120N"][0]['arrivalTime']=="0" or line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
-                raise Exception('line 1 data error 2')
+        if (line1_i['futureStopData']["120N"][0]['arrivalTime']=="0" or line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
+            #raise Exception('line 1 data error 2')
+            return invaild_feed_data()
         else:
             if (line1_i['futureStopData'][destination][0]['arrivalTime']=="0"):
-                raise Exception('line 1 data error 3')
+                #raise Exception('line 1 data error 3')
+                return invaild_feed_data()
             line1ArrivalTime = int(line1_i['futureStopData'][destination][0]['arrivalTime'])
             currentTime1 = line1_i['timeStamp']
             line1time = line1ArrivalTime - currentTime1
             print "If you switch, you will arrive at : ", readable_time(line1ArrivalTime), ", take ", line1time, "seconds"
-        return True
+        print "You would arrive at destination at %s." %(readable_time(line1ArrivalTime))
+        return 1
     else:
-        return False
+        print "Stay on Line 1."
+        print "You would arrive at destination at %s." %(readable_time(line1ArrivalTime))
+        return 0
 
 
 
