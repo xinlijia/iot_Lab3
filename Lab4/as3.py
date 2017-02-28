@@ -93,36 +93,40 @@ def main():
     result = ''
     while(1):
         mode=input("please enter your mode:[1/2/3]")
-        c=source()
-        d=dest()
-
-        while ((c<120 and d<120) or (c>127 and d>127)):
-            print "No Line 2 or Line 3 available along your route. No need to switch."
-            continue
-
-        if (c == d):
-            print "Source and destination are the same. Try again."
-            continue
-        elif (c<d):
-            s = ''.join([str(c),'S'])
-            d = ''.join([str(d),'S'])
-            if (planTripS(s,d)== True):
-                result = 'Switch'
-            else:
-                result = 'Stay'
-            print result
-        else:
-            s = ''.join([str(c),'N'])
-            d = ''.join([str(d),'N'])
-            if (planTripN(s,d)== True):
-                result = 'Switch'
-            else:
-                result = 'Stay'
-            print result
-        if(mode=="2"):
-            sendSubMes(result)
-        if(mode=="3"):
+        if(mode==3):
             return 0
+        elif(mode!=1 and mode !=2):
+            print "Wrong mode."
+        else:
+            c=source()
+            d=dest()
+
+            if ((c<120 and d<120) or (c>127 and d>127)):
+                print "No Line 2 or Line 3 available along your route. No need to switch."
+                continue
+
+            if (c == d):
+                print "Source and destination are the same. Try again."
+                continue
+            elif (c<d):
+                s = ''.join([str(c),'S'])
+                d = ''.join([str(d),'S'])
+                if (planTripS(s,d)== True):
+                    result = 'Switch'
+                else:
+                    result = 'Stay'
+                print result
+            else:
+                s = ''.join([str(c),'N'])
+                d = ''.join([str(d),'N'])
+                if (planTripN(s,d)== True):
+                    result = 'Switch'
+                else:
+                    result = 'Stay'
+                print result
+            if(mode==2):
+                sendSubMes(result)
+
             
 # send subscribe message to the given phone number
 def sendSubMes(result):
