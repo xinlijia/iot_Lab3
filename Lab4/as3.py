@@ -150,15 +150,9 @@ def sendSubMes(result):
     conn = boto.sns.connect_to_region("us-east-1",
                 aws_access_key_id = '',
                 aws_secret_access_key = '')
-
-
     TOPIC = 'arn:aws:sns:us-east-1:936464516303:Demo_Topic'
-
     add_sub = raw_input("Please input your phone number : ")
-
     conn.subscribe(TOPIC,"SMS",add_sub)
-
->>>>>>> origin/master
     pub = conn.publish(topic=TOPIC,message=result)
 
 
