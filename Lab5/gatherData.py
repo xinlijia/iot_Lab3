@@ -17,9 +17,11 @@ DAY = datetime.today().strftime("%A")
 TIMEZONE = timezone('America/New_York')
 
 global ITERATIONS
-
+global WD
 #Default number of iterations
-ITERATIONS = 50
+ITERATIONS = 1
+WD = 'Weekday'
+
 
 
 #################################################################
@@ -32,9 +34,63 @@ columns =['timestamp','tripId','route','day','timeToReachExpressStation','timeTo
 
 def main(fileName):
     # API key
-    with open('../../key.txt', 'rb') as keyfile:
+    with open('key.txt', 'rb') as keyfile:
         APIKEY = keyfile.read().rstrip('\n')
         keyfile.close()
 
 	### INSERT YOUR CODE HERE ###
+    tripUpdates = mtaUpdates.mtaUpdates(APIKEY)
+    with open(fileName, 'wb') as csvfile:
+        csvwriter = csv.writer(csvfile,delimiter=',')
+        csvwriter.writerow(['Timestamp','tripId/train start time','Route','Day of the week',
+                            'Time at which it reaches express station (at 116th street)',
+                            'Time at which it reaches express station (at 96th street)',
+                            'Time at which it reaches the destination (at 42nd Street)'])
+        csvfile.close()
 
+    if (DAY=="Saturday" or DAY=="Sunday"):
+        WD = 'Weekend'
+    try:
+        while(1):
+            adding(fileName, tripUpdates)   
+    except KeyboardInterrupt:
+        exit 
+def adding(fileName, tripUpdates):
+    # Get data from feed
+    update_list = tripUpdates.getTripUpdates()
+    for t in update_list:
+        # Write new data to csv
+        if (t['routeId']=="1"):
+             # check if the selected train1 has arrival time data for 110th, 96th, 42ns street
+            if('117S' in t['futureStopData'].keys() 
+               and '120S' in t['futureStopData'].keys() 
+               and '127S' in t['futureStopData'].keys()):
+                if('arrivalTime' in t['futureStopData']['117S'][0] 
+                   and 'arrivalTime' in t['futureStopData']['120S'][0] 
+                   and 'arrivalTime' in t['futureStopData']['127S'][0]):
+                    if(t['futureStopData']['117S'][0]['arrivalTime']!=0 
+                       and t['futureStopData']['120S'][0]['arrivalTime']!=0 
+                       and t['futureStopData']['127S'][0]['arrivalTime']!=0):
+                        with open(fileName, 'ab') as csvfile:
+                            csvwriter = csv.writer(csvfile,delimiter=',')
+                            csvwriter.writerow([t['timeStamp'], t['tripId'][0:5], t['routeId'],WD,
+                                                t['futureStopData']['117S'][0]['arrivalTime'],
+                                                 t['futureStopData']['120S'][0]['arrivalTime'],
+                                                 t['futureStopData']['127S'][0]['arrivalTime']]) 
+                            csvfile.close()
+        if (t['routeId']=="2" or t['routeId']=="3"):
+             # check if the selected train 2 or 3 has arrival time data for 96th, 42ns street
+            if('120S' in t['futureStopData'].keys() and '127S' in t['futureStopData'].keys()):
+                if('arrivalTime' in t['futureStopData']['120S'][0] 
+                   and 'arrivalTime' in t['futureStopData']['127S'][0]):
+                    if(t['futureStopData']['120S'][0]['arrivalTime']!=0 
+                         and t['futureStopData']['127S'][0]['arrivalTime']!=0):
+                        with open(fileName, 'ab') as csvfile:
+                            csvwriter = csv.writer(csvfile,delimiter=',')
+                            csvwriter.writerow([t['timeStamp'], t['tripId'][0:5], t['routeId'],WD,'0',
+                                                 t['futureStopData']['120S'][0]['arrivalTime'],
+                                                 t['futureStopData']['127S'][0]['arrivalTime']])  
+                            csvfile.close()
+
+if __name__ == "__main__":
+    main( 'test.csv')
