@@ -21,7 +21,7 @@ TIMEZONE = timezone('America/New_York')
 global ITERATIONS
 global WD
 #Default number of iterations
-ITERATIONS = 5
+ITERATIONS = 50
 WD = 'Weekday'
 
 
