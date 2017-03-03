@@ -40,6 +40,7 @@ def main(fileName):
 
 	### INSERT YOUR CODE HERE ###
     tripUpdates = mtaUpdates.mtaUpdates(APIKEY)
+   '''
     with open(fileName, 'wb') as csvfile:
         csvwriter = csv.writer(csvfile,delimiter=',')
         csvwriter.writerow(['Timestamp','tripId/train start time','Route','Day of the week',
@@ -47,6 +48,7 @@ def main(fileName):
                             'Time at which it reaches express station (at 96th street)',
                             'Time at which it reaches the destination (at 42nd Street)'])
         csvfile.close()
+    '''
 
     if (DAY=="Saturday" or DAY=="Sunday"):
         WD = 'Weekend'
