@@ -20,11 +20,10 @@ TIMEZONE = timezone('America/New_York')
 
 global ITERATIONS
 global WD
-#Default number of iterations
-ITERATIONS = 50
+global COOLTIME
+ITERATIONS = 10
+COOLTIME = 0
 WD = 'Weekday'
-
-
 
 #################################################################
 ####### Note you MAY add more datafields if you see fit #########
@@ -35,6 +34,11 @@ columns = ['timestamp','tripId','route','day','timeToReachSource','timeToReachEx
 
 
 def main(fileName):
+    """
+    Run function 'adding',
+    Then remove the duplicate data based on tripId.
+    Finally, Append remaining entries to .csv file.
+    """
     # API key
     with open('../utils/api_key.txt', 'rb') as keyfile:
         APIKEY = keyfile.read().rstrip('\n')
@@ -45,25 +49,15 @@ def main(fileName):
 
     with open(fileName, 'wb') as csvfile:
         csvwriter = csv.writer(csvfile,delimiter=',')
-        # csvwriter.writerow(['Timestamp','tripId/train start time','Route','Day of the week',
-        #                     'Time at which it reaches express station (at 116th street)',
-        #                     'Time at which it reaches express station (at 96th street)',
-        #                     'Time at which it reaches the destination (at 42nd Street)'])
-        csvwriter.writerow(columns)
+        csvwriter.writerow(columns)  # Write first row in .csv file
         csvfile.close()
-        # finalData = pandas.DataFrame(columns=('arrive116Time', 'Wkdy/Wknd', 'Recommendation'))
-    # Create a new dataframe to record raw data
-    # rawData = pandas.DataFrame(columns=('timestamp','tripId','route','day','timeToReachSource','timeToReachExpressStation','timeToReachDestination'))
     if (DAY=="Saturday" or DAY=="Sunday"):
         WD = 'Weekend'
+
     try:
         while(1):
-            # Create a new dataframe to record raw data
-            rawData = pandas.DataFrame(columns=('timestamp','tripId','route','day','timeToReachSource','timeToReachExpressStation','timeToReachDestination'))
-            for i in range(ITERATIONS):
-                adding(rawData, tripUpdates)
-                time.sleep(30)
-            # Remove duplicate entries based on tripId
+            rawData = adding(tripUpdates)
+            # Preliminary Cleaning: remove duplicate entries based on tripId
             data = rawData.groupby('tripId').apply(lambda x: x.ix[x.timestamp.idxmax()])
             # Append entries to .csv file
             data.to_csv(fileName, mode='ab', header=False, index=False)
@@ -72,54 +66,61 @@ def main(fileName):
         exit
 
 
-def adding(rawData, tripUpdates):
-    # Get data from feed
+def adding(tripUpdates):
+    """
+    Fetch data from MTA feed ITERATION times in a row.
+    Sleep time between two fetches is COOLTIME.
+    Input: a tripUpdates object
+    Return: a pandas.DataFrame object
+    """
+    rawData = pandas.DataFrame(columns=('timestamp','tripId','route','day','timeToReachSource','timeToReachExpressStation','timeToReachDestination'))
     update_list = tripUpdates.getTripUpdates()
-    for t in update_list:
-        # Write new data to csv
-        if (t['routeId']=="1"):
-             # check if the selected train1 has arrival time data for 110th, 96th, 42ns street
-            if('117S' in t['futureStopData'].keys()
-               and '120S' in t['futureStopData'].keys()
-               and '127S' in t['futureStopData'].keys()):
-                if('arrivalTime' in t['futureStopData']['117S'][0]
-                   and 'arrivalTime' in t['futureStopData']['120S'][0]
-                   and 'arrivalTime' in t['futureStopData']['127S'][0]):
-                    if(t['futureStopData']['117S'][0]['arrivalTime']!=0
-                       and t['futureStopData']['120S'][0]['arrivalTime']!=0
-                       and t['futureStopData']['127S'][0]['arrivalTime']!=0):
-                       # Passed validity check. Append data.   ###t['tripId'][0:5]###
-                       row = [t['timeStamp'], t['tripId'], t['routeId'],WD,
-                                t['futureStopData']['117S'][0]['arrivalTime'],
-                                t['futureStopData']['120S'][0]['arrivalTime'],
-                                t['futureStopData']['127S'][0]['arrivalTime']]
-                       rawData.append(row)
-                        # with open(fileName, 'ab') as csvfile:
-                        #     csvwriter = csv.writer(csvfile,delimiter=',')
-                        #     csvwriter.writerow([t['timeStamp'], t['tripId'][0:5], t['routeId'],WD,
-                        #                         t['futureStopData']['117S'][0]['arrivalTime'],
-                        #                          t['futureStopData']['120S'][0]['arrivalTime'],
-                        #                          t['futureStopData']['127S'][0]['arrivalTime']])
-                        #     csvfile.close()
+    for i in range (ITERATIONS):
+        for t in update_list:
+            time.sleep(COOLTIME)
+            # Write new data to csv
+            if (t['routeId']=="1"):
+                 # check if the selected train1 has arrival time data for 110th, 96th, 42ns street
+                if('117S' in t['futureStopData'].keys()
+                   and '120S' in t['futureStopData'].keys()
+                   and '127S' in t['futureStopData'].keys()):
+                    if('arrivalTime' in t['futureStopData']['117S'][0]
+                       and 'arrivalTime' in t['futureStopData']['120S'][0]
+                       and 'arrivalTime' in t['futureStopData']['127S'][0]):
+                        if(t['futureStopData']['117S'][0]['arrivalTime']!=0
+                           and t['futureStopData']['120S'][0]['arrivalTime']!=0
+                           and t['futureStopData']['127S'][0]['arrivalTime']!=0):
+                           # Passed validity check. Append data to rawData.   ###t['tripId'][0:5]###
+                           data = [t['timeStamp'], t['tripId'], t['routeId'],WD,
+                                    t['futureStopData']['117S'][0]['arrivalTime'],
+                                    t['futureStopData']['120S'][0]['arrivalTime'],
+                                    t['futureStopData']['127S'][0]['arrivalTime']]
+                           columns=['timestamp','tripId','route','day','timeToReachSource','timeToReachExpressStation','timeToReachDestination']
+                           row = dict()
+                           for i in range(7):
+                                row[columns[i]] = data[i]
+                           # print "line 1 row:", row
+                           rawData = rawData.append(row, ignore_index=True)
 
-        if (t['routeId']=="2" or t['routeId']=="3"):
-             # check if the selected train 2 or 3 has arrival time data for 96th, 42ns street
-            if('120S' in t['futureStopData'].keys() and '127S' in t['futureStopData'].keys()):
-                if('arrivalTime' in t['futureStopData']['120S'][0]
-                   and 'arrivalTime' in t['futureStopData']['127S'][0]):
-                    if(t['futureStopData']['120S'][0]['arrivalTime']!=0
-                         and t['futureStopData']['127S'][0]['arrivalTime']!=0):
-                        # Passed validity check. Append data.
-                        row = [t['timeStamp'], t['tripId'], t['routeId'],WD,'0',
-                                t['futureStopData']['120S'][0]['arrivalTime'],
-                                t['futureStopData']['127S'][0]['arrivalTime']]
-                        rawData.append(row)
-                        # with open(fileName, 'ab') as csvfile:
-                        #     csvwriter = csv.writer(csvfile,delimiter=',')
-                        #     csvwriter.writerow([t['timeStamp'], t['tripId'][0:5], t['routeId'],WD,'0',
-                        #                          t['futureStopData']['120S'][0]['arrivalTime'],
-                        #                          t['futureStopData']['127S'][0]['arrivalTime']])
-                        #     csvfile.close()
+            if (t['routeId']=="2" or t['routeId']=="3"):
+                # check if the selected train 2 or 3 has arrival time data for 96th, 42ns street
+                if('120S' in t['futureStopData'].keys() and '127S' in t['futureStopData'].keys()):
+                    if('arrivalTime' in t['futureStopData']['120S'][0]
+                       and 'arrivalTime' in t['futureStopData']['127S'][0]):
+                        if(t['futureStopData']['120S'][0]['arrivalTime']!=0
+                             and t['futureStopData']['127S'][0]['arrivalTime']!=0):
+                            # Passed validity check. Append data to rawData.
+                            data = [t['timeStamp'], t['tripId'], t['routeId'],WD,'0',
+                                    t['futureStopData']['120S'][0]['arrivalTime'],
+                                    t['futureStopData']['127S'][0]['arrivalTime']]
+                            columns=['timestamp','tripId','route','day','timeToReachSource','timeToReachExpressStation','timeToReachDestination']
+                            row = dict()
+                            for i in range(7):
+                                row[columns[i]] = data[i]
+                            rawData = rawData.append(row, ignore_index=True)
+
+    return rawData
+    ### CODE ENDS ###
 
 if __name__ == "__main__":
-    main( 'test.csv')
+    main( 'data.csv')
