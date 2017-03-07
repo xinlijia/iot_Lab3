@@ -10,6 +10,7 @@ from botocore.exceptions import ClientError
 sys.path.append('../utils')
 import aws
 
+'''
 class S3(object):
 	S3 = None
 	S3_BUCKET_NAME = <INSERT YOUR S3 BUCKET NAME HERE>
@@ -96,8 +97,25 @@ class S3(object):
 	    # If we reach here then we know that simplest change is to append the desired statement into the policy.
         jsonPolicy['Statement'].append(targetStatement)
         return json.dumps(jsonPolicy)"""
+'''
+    
+import boto
+import boto.s3.connection
+
+with open('aws_key.txt', 'rb') as aws_file:
+	lines = aws_file.readlines()
+	access_key = lines[0].rstrip('\n')
+    	secret_key = lines[1].rstrip('\n')
 
 
-    	
+conn = boto.connect_s3(
+        aws_access_key_id = access_key,
+        aws_secret_access_key = secret_key)
 
-	
+
+buc = conn.get_bucket('mtaupdates')
+
+from boto.s3.key import Key
+k = Key(buc)
+k.key = 'finalData.csv'
+cc = k.set_contents_from_filename('finalData.csv')
