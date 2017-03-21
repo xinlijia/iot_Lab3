@@ -1,16 +1,14 @@
 {% if city_list %}
     <ul>
     {% for city in city_list %}
-	<li><a href="/p2/{{ city.id }}/{{"weather"}}">{{ city.city_name }}</a></li>
-    {% endfor %}
+    <ul>
+		{{city.city_name}}{{city.temp}}
+    </ul>
+
+	
+	{% endfor %}
     </ul>
 {% else %}
     <p>No cities are available.</p>
 {% endif %}
 
-<ul>"Plan your trip"</ul>
-<form action="trip/" method="post">
-	{% csrf_token %}
-
-    <input type="submit" value="Go">
-</form>
