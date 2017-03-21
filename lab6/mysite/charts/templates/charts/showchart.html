@@ -1,0 +1,13 @@
+{% if temperature %}
+    <ul>
+    {% for t in temperature %}
+    <ul>
+		{{t.temp}}{{" : "}}{{t.timestamp}}
+    </ul>
+
+	
+	{% endfor %}
+    </ul>
+{% else %}
+    <p>No temperatures collected.</p>
+{% endif %}
