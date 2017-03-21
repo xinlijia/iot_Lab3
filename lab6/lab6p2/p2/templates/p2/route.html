@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<style>
+		.left {
+			position:absolute;
+			left:0; top:0; bottom: 0;
+			width: 178px;
+		}
+		.main {
+			position: absolute;
+			left:178px; top:0; right:0; bottom:0;
+		}
+	</style>
+
+</head>
+
+<body>
+
+	<div id='StatusBar' class='left' style="">
+		<p1>Source&nbsp&nbsp&nbsp&nbsp</p1>
+		<select name='source' id='source' class="mui-dropdown">
+			<option value="6">Boston</option>
+			<option value="5">New York</option>
+			<option value="7">Philadelphia</option>
+			<option value="8">Washington D.C.</option>
+		</select>
+		<p1>Destination</p1>
+		<select name='dest' id='dest' class="mui-dropdown">
+			<option value="6">Boston</option>
+			<option value="5">New York</option>
+			<option value="7">Philadelphia</option>
+			<option value="8">Washington D.C.</option>
+		</select>
+		<form onsubmit="window.location = '/p2/' + source.value + '/' + dest.value + '/'; return false;">
+			<button type="submit">Get Route</button>
+		</form>
+		<p>
+			Source:<br />{{source.city_name}}<br />{{source.temp}}
+		</p>
+		<p>
+			Destination:<br />{{dest.city_name}}<br />{{dest.temp}}
+		</p>
+	</div>
+
+	<div id='map' class='main'>
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyADoHneJIQM-ARVPW4ITUqfYgwFdTzWIeM&callback=myMap"></script>
+		<script>
+		var geocoder;
+		var map;
+		var marker;
+
+		// "Draw" the map on webpage
+		var latlng=new google.maps.LatLng(40.7128,-74.0059);
+		var myOptions={
+			zoom:6,
+			center:latlng,
+			// mapTypeId:google.maps.MapTypeId.TERRAIN
+		};
+		map = new google.maps.Map(document.getElementById("map"),myOptions);
+
+		// Extract Coordinates of source and destindation, render the route on map
+		var rendererOptions={map:map};
+		directionsDisplay=new google.maps.DirectionsRenderer(rendererOptions);
+		// var point1=new google.maps.LatLng(-33.8975098545041,151.09962701797485);
+		// var point2=new google.maps.LatLng(-33.8584421519279,151.0693073272705);
+		// var point3=new google.maps.LatLng(-33.87312358690301,151.99952697753906);
+		// var point4=new google.maps.LatLng(-33.84525521656404,151.0421848297119);
+		// var wps=[{location:point1},{location:point2},{location:point4}];
+		var org=new google.maps.LatLng({{source.lo}},{{source.la}});
+		var destination=new google.maps.LatLng({{dest.lo}},{{dest.la}});
+		var request={
+			origin:org,
+			destination:destination,
+			// waypoints:wps,
+			travelMode:google.maps.DirectionsTravelMode.DRIVING
+		};
+
+		directionsService=new google.maps.DirectionsService();
+		directionsService.route(request,function(response,status){
+			if(status==google.maps.DirectionsStatus.OK){
+				directionsDisplay.setDirections(response);
+			}
+			else
+				alert('failed to get directions');
+			}
+		);
+
+		</script>
+	</div>
+</body>
+
+</html>
